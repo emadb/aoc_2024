@@ -7,4 +7,7 @@ Run `mix gen N` (where N is a number: `1..25`) to generate the files for the day
 
 Run `mix day N` to run the module of day N
 
+_Note_
+The input files are not in this repository. You have to donwload them and put them in `./lib/inputs` folder.
+
 

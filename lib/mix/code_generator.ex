@@ -1,6 +1,5 @@
 defmodule Aoc.CodeGenerator do
   def run(day, part \\ 1) do
-
     string_day = to_string(day) |> String.pad_leading(2, "0")
     module = String.to_atom("Elixir.Aoc.Day#{string_day}")
     input = "../inputs/day_#{string_day}.txt"
@@ -37,26 +36,29 @@ defmodule Aoc.CodeGenerator do
         input = Path.absname(@test_input)
         result = Aoc.Day#{string_day}.part_one(input)
 
-        assert result == nil
+        assert result == input
       end
 
+      @tag :skip
       test "part one" do
         input = Path.absname(@real_input)
         result = Aoc.Day#{string_day}.part_one(input)
-        assert result == nil
+        assert result == input
       end
 
+      @tag :skip
       test "part two (test)" do
         input = Path.absname(@test_input)
         result = Aoc.Day#{string_day}.part_two(input)
 
-        assert result == nil
+        assert result == input
       end
 
+      @tag :skip
       test "part two" do
         input = Path.absname(@real_input)
         result = Aoc.Day#{string_day}.part_two(input)
-        assert result == nil
+        assert result == input
       end
 
     end

@@ -10,50 +10,75 @@ defmodule Aoc.Day09 do
     input
     |> parse_disk_map()
     |> defrag_blocks()
-    |> IO.inspect(label: ">>>>")
-    # 00992111777.44.333....5555.6666.....8888..
     |> checksum()
   end
 
-  defp defrag_blocks(disk) do
-    do_defrag_blocks(disk, Enum.reverse(disk), [])
+  defp group_by_chars(input) do
+    input
+    |> Enum.chunk_by(& &1)
+    |> Enum.filter(fn [char | _] -> char != "." end)
+    |> Enum.map(fn group -> {List.first(group), length(group)} end)
   end
 
-  defp do_defrag_blocks([], _blocks, acc), do: acc
+  defp defrag_blocks(disk) do
+    do_defrag_blocks(group_by_chars(Enum.reverse(disk)), Enum.chunk_by(disk, & &1))
+  end
 
-  # 00...111...2...333.44.5555.6666.777.888899
-  defp do_defrag_blocks(["." | _] = disk, blocks, acc) do
-    IO.inspect("--")
-    {dots, rest} = find_dots(disk)
-    {ids, rest2} = rfind_ids(blocks)
+  defp do_defrag_blocks([], disk) do
+    Enum.flat_map(disk, fn x -> x end)
+  end
 
-    subs =
-      Enum.zip(dots, ids)
-      |> Enum.map(fn {_, e} -> e end)
+  defp do_defrag_blocks([{s, count} | rest], disk) do
+    space =
+      Enum.find_index(disk, fn b ->
+        Enum.at(b, 0) == "." && length(b) >= count
+      end)
 
-    dot_to_add =
-      case length(dots) - length(ids) > 0 do
-        true -> List.duplicate(".", length(dots) - length(ids))
-        false -> []
+    block = Enum.find_index(disk, fn b -> Enum.at(b, 0) == s and length(b) == count end)
+
+    new_disk =
+      if is_nil(space) do
+        disk
+      else
+        move(disk, block, space) |> merge_dot_blocks()
       end
 
-    IO.inspect({dots, rest}, label: "DOTS")
-    IO.inspect({ids, rest2}, label: "ids")
-    IO.inspect(dot_to_add, label: "dot_to_add")
-    IO.inspect(subs, label: "subs")
-    IO.inspect(acc, label: "acc")
-    IO.inspect(dot_to_add ++ Enum.drop(rest, -1 * length(ids)), label: "RECUR")
-
-    do_defrag_blocks(dot_to_add ++ Enum.drop(rest, -1 * length(ids)), rest2, acc ++ subs)
+    do_defrag_blocks(rest, new_disk)
   end
 
-  defp do_defrag_blocks([id | rest], blocks, acc) do
-    do_defrag_blocks(rest, blocks, acc ++ [id])
+  def move(disk, index_block, index_space) when index_block > index_space do
+    block_to_move = Enum.at(disk, index_block)
+    block_to_replace = Enum.at(disk, index_space)
+
+    size_to_move = length(block_to_move)
+    size_to_replace = length(block_to_replace)
+
+    disk = List.replace_at(disk, index_block, List.duplicate(".", size_to_move))
+
+    disk = List.replace_at(disk, index_space, block_to_move)
+
+    if size_to_replace > size_to_move do
+      new_block = List.duplicate(".", size_to_replace - size_to_move)
+      List.insert_at(disk, index_space + 1, new_block)
+    else
+      disk
+    end
   end
 
-  # [".", "7", "7", "7", ".", "6", "6", "6", "6", ".", "5", "5", "5", "5", ".",
-  #  "4", "4", ".", "3", "3", "3", ".", ".", ".", "2", ".", ".", ".", "1", "1",
-  #  "1", ".", ".", ".", "0", "0"]
+  def move(disk, _, _), do: disk
+
+  def merge_dot_blocks(disk) do
+    Enum.reduce(disk, [], fn block, acc ->
+      case {block, List.last(acc)} do
+        {["." | _] = current, ["." | _] = last} ->
+          List.replace_at(acc, -1, last ++ current)
+
+        _ ->
+          acc ++ [block]
+      end
+    end)
+  end
+
   def rfind_ids(reversed_disk) do
     reversed_disk = Enum.drop_while(reversed_disk, fn x -> x == "." end)
     first = List.first(reversed_disk)
@@ -68,7 +93,7 @@ defmodule Aoc.Day09 do
         end
       end)
 
-    {ids, rest} = Enum.split(reversed_disk, index)
+    Enum.split(reversed_disk, index)
   end
 
   def find_dots(disk) do
@@ -84,14 +109,11 @@ defmodule Aoc.Day09 do
     Enum.split(disk, index)
   end
 
-  defp defrag_blocks([id | disk], acc) do
-    defrag_blocks(disk, acc ++ [id])
-  end
-
   defp checksum(disk) do
     {_, checksum} =
       Enum.reduce(disk, {0, 0}, fn e, {index, sum} ->
-        {index + 1, sum + String.to_integer(e) * index}
+        n = if e == ".", do: 0, else: String.to_integer(e)
+        {index + 1, sum + n * index}
       end)
 
     checksum

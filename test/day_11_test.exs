@@ -16,10 +16,9 @@ defmodule Aoc.Day11Test do
     assert result == 212_655
   end
 
-  @tag skip: true, timeout: :infinity
   test "part two" do
     input = Path.absname(@real_input)
     result = Aoc.Day11.part_two(input)
-    assert result == input
+    assert result == 253_582_809_724_830
   end
 end

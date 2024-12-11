@@ -5,19 +5,20 @@ defmodule Aoc.Day11 do
     |> Enum.sum()
   end
 
-  defp build_stone_map(input) do
-    input
-    |> InputFile.get_file()
-    |> String.split(" ")
-    |> Enum.reduce(%{}, fn c, acc ->
-      Map.update(acc, c, 1, fn x -> x + 1 end)
-    end)
-  end
-
   def part_two(input) do
     build_stone_map(input)
     |> blink(75)
     |> Enum.sum()
+  end
+
+  defp build_stone_map(input) do
+    input
+    |> InputFile.get_file()
+    |> String.split(" ")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.reduce(%{}, fn c, acc ->
+      Map.update(acc, c, 1, fn x -> x + 1 end)
+    end)
   end
 
   def blink(a, blinks) do
@@ -31,32 +32,33 @@ defmodule Aoc.Day11 do
     end)
   end
 
-  def apply_rule(map, "0", count) do
-    Map.update(map, "1", count, &(&1 + count))
+  def apply_rule(map, 0, count) do
+    Map.update(map, 1, count, &(&1 + count))
   end
 
   def apply_rule(map, stone, count) do
-    if rem(String.length(stone), 2) == 0 do
-      {first_half, second_half} = split_stone(stone)
+    if even?(stone) do
+      {stone1, stone2} = split_stone(stone)
 
       map
-      |> Map.update(first_half, count, &(&1 + count))
-      |> Map.update(second_half, count, &(&1 + count))
+      |> Map.update(stone1, count, &(&1 + count))
+      |> Map.update(stone2, count, &(&1 + count))
     else
-      new_key = Integer.to_string(String.to_integer(stone) * 2024)
+      new_key = stone * 2024
       Map.update(map, new_key, count, &(&1 + count))
     end
   end
 
+  def even?(stone) do
+    digits = Integer.digits(stone)
+    rem(length(digits), 2) == 0
+  end
+
   def split_stone(stone) do
-    half_length = div(String.length(stone), 2)
-    first_half = String.slice(stone, 0, half_length)
+    digits = Integer.digits(stone)
+    middle = div(length(digits), 2)
 
-    second_half =
-      String.slice(stone, half_length, String.length(stone) - half_length)
-      |> String.to_integer()
-      |> Integer.to_string()
-
-    {first_half, second_half}
+    {s1, s2} = Enum.split(digits, middle)
+    {Enum.join(s1) |> String.to_integer(), Enum.join(s2) |> String.to_integer()}
   end
 end

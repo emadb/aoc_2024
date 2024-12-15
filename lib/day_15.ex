@@ -284,32 +284,47 @@ defmodule Aoc.Day15 do
     dr = Map.get(map, {xr, yr - 1})
 
     case {dl, dr} do
-      {".", "."} ->
-        update_map(map, {xl, yl}, {xr, yr}, "^")
-
       {"#", _} ->
         map
 
       {_, "#"} ->
         map
 
-      {".", "["} ->
-        map = move_box_d(map, {xl + 1, yl - 1}, {xr + 1, yr - 1}, "^")
+      {".", "."} ->
         update_map(map, {xl, yl}, {xr, yr}, "^")
+
+      {".", "["} ->
+        map_box = move_box_d(map, {xl + 1, yl - 1}, {xr + 1, yr - 1}, "^")
+
+        if map_box != map do
+          update_map(map_box, {xl, yl}, {xr, yr}, "^")
+        else
+          map_box
+        end
 
       {"]", "."} ->
-        map = move_box_d(map, {xl - 1, yl - 1}, {xr - 1, yl - 1}, "^")
-        update_map(map, {xl, yl}, {xr, yr}, "^")
+        map_box = move_box_d(map, {xl - 1, yl - 1}, {xr - 1, yl - 1}, "^")
+
+        if map_box != map do
+          update_map(map_box, {xl, yl}, {xr, yr}, "^")
+        else
+          map_box
+        end
 
       {"[", "]"} ->
-        map = move_box_d(map, {xl, yl - 1}, {xr, yr - 1}, "^")
-        update_map(map, {xl, yl}, {xr, yr}, "^")
+        map_box = move_box_d(map, {xl, yl - 1}, {xr, yr - 1}, "^")
+
+        if map_box != map do
+          update_map(map_box, {xl, yl}, {xr, yr}, "^")
+        else
+          map_box
+        end
 
       {"]", "["} ->
         m1 = move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
         m2 = move_box_d(map, {xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
 
-        map =
+        map_box =
           if m1 != map and m2 != map do
             move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
             |> move_box_d({xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
@@ -317,7 +332,11 @@ defmodule Aoc.Day15 do
             map
           end
 
-        update_map(map, {xl, yl}, {xr, yr}, "^")
+        if map_box != map do
+          update_map(map_box, {xl, yl}, {xr, yr}, "^")
+        else
+          map_box
+        end
     end
   end
 

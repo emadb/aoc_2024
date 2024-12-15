@@ -24,13 +24,6 @@ defmodule Aoc.Day15 do
     robot = find_robot(map)
     next_pos = next(command, robot)
 
-    # IO.inspect(%{
-    #   command: command,
-    #   robot: robot,
-    #   next_pos: next_pos,
-    #   map: Map.get(map, next_pos)
-    # })
-
     new_map =
       case Map.get(map, next_pos) do
         "." ->
@@ -110,13 +103,304 @@ defmodule Aoc.Day15 do
   end
 
   def part_two(input) do
-    input
+    [string_map, string_commands] =
+      input
+      |> InputFile.get_file()
+      |> String.split("\n\n")
+
+    map = build_map(string_map)
+    commands = build_commands(string_commands)
+    map = double_map(map)
+
+    final_map = move_d(commands, map)
+
+    final_map
+    |> Enum.filter(fn {_, v} -> v == "[" end)
+    |> Enum.map(fn {{x, y}, "["} -> 100 * y + x end)
+    |> Enum.sum()
+  end
+
+  defp move_d([], map), do: map
+
+  defp move_d([command | rest], map) do
+    robot = find_robot(map)
+    next_pos = next(command, robot)
+
+    new_map =
+      case Map.get(map, next_pos) do
+        "." ->
+          move_robot(map, robot, next_pos)
+
+        "#" ->
+          map
+
+        "[" ->
+          {x, y} = next_pos
+          map_box = move_box_d(map, {x, y}, {x + 1, y}, command)
+          if map_box != map, do: move_robot(map_box, robot, next_pos), else: map_box
+
+        "]" ->
+          {x, y} = next_pos
+          map_box = move_box_d(map, {x - 1, y}, {x, y}, command)
+          if map_box != map, do: move_robot(map_box, robot, next_pos), else: map_box
+      end
+
+    move_d(rest, new_map)
+  end
+
+  defp move_box_d(map, {xl, yl}, {xr, yr}, "<") do
+    case Map.get(map, {xl - 1, yl}) do
+      "." ->
+        map
+        |> Map.put({xl, yl}, "]")
+        |> Map.put({xr, yr}, ".")
+        |> Map.put({xl - 1, yl}, "[")
+
+      "#" ->
+        map
+
+      "]" ->
+        map_box = move_box_d(map, {xl - 2, yl}, {xl - 1, yl}, "<")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl}, "]")
+          |> Map.put({xl - 1, yl}, "[")
+        else
+          map_box
+        end
+    end
+  end
+
+  defp move_box_d(map, {xl, yl}, {xr, yr}, ">") do
+    case Map.get(map, {xr + 1, yr}) do
+      "." ->
+        map
+        |> Map.put({xl, yl}, ".")
+        |> Map.put({xr, yr}, "[")
+        |> Map.put({xr + 1, yr}, "]")
+
+      "#" ->
+        map
+
+      "[" ->
+        map_box = move_box_d(map, {xr + 1, yr}, {xr + 2, yr}, ">")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, "[")
+          |> Map.put({xr + 1, yr}, "]")
+        else
+          map_box
+        end
+    end
+  end
+
+  defp move_box_d(map, {xl, yl}, {xr, yr}, "v") do
+    dl = Map.get(map, {xl, yl + 1})
+    dr = Map.get(map, {xr, yr + 1})
+
+    case {dl, dr} do
+      {".", "."} ->
+        map
+        |> Map.put({xl, yl}, ".")
+        |> Map.put({xr, yr}, ".")
+        |> Map.put({xl, yl + 1}, "[")
+        |> Map.put({xr, yr + 1}, "]")
+
+      {"#", _} ->
+        map
+
+      {_, "#"} ->
+        map
+
+      {".", "["} ->
+        map_box = move_box_d(map, {xl + 1, yl + 1}, {xr + 1, yr + 1}, "v")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl + 1}, "[")
+          |> Map.put({xr, yr + 1}, "]")
+        else
+          map_box
+        end
+
+      {"]", "."} ->
+        map_box = move_box_d(map, {xl - 1, yl + 1}, {xr - 1, yr + 1}, "v")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl + 1}, "[")
+          |> Map.put({xr, yr + 1}, "]")
+        else
+          map_box
+        end
+
+      {"[", "]"} ->
+        map_box = move_box_d(map, {xl, yl + 1}, {xr, yr + 1}, "v")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl + 1}, "[")
+          |> Map.put({xr, yr + 1}, "]")
+        else
+          map_box
+        end
+
+      {"]", "["} ->
+        m1 = move_box_d(map, {xl - 1, yl + 1}, {xr - 1, yr + 1}, "v")
+        m2 = move_box_d(map, {xl + 1, yl + 1}, {xr + 1, yr + 1}, "v")
+
+        map_box =
+          if m1 != map and m2 != map do
+            move_box_d(map, {xl - 1, yl + 1}, {xr - 1, yr + 1}, "v")
+            |> move_box_d({xl + 1, yl + 1}, {xr + 1, yr + 1}, "v")
+          else
+            map
+          end
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl + 1}, "[")
+          |> Map.put({xr, yr + 1}, "]")
+        else
+          map_box
+        end
+    end
+  end
+
+  defp move_box_d(map, {xl, yl}, {xr, yr}, "^") do
+    dl = Map.get(map, {xl, yl - 1})
+    dr = Map.get(map, {xr, yr - 1})
+
+    case {dl, dr} do
+      {".", "."} ->
+        map
+        |> Map.put({xl, yl}, ".")
+        |> Map.put({xr, yr}, ".")
+        |> Map.put({xl, yl - 1}, "[")
+        |> Map.put({xr, yr - 1}, "]")
+
+      {"#", _} ->
+        map
+
+      {_, "#"} ->
+        map
+
+      {".", "["} ->
+        map_box = move_box_d(map, {xl + 1, yl - 1}, {xr + 1, yr - 1}, "^")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl - 1}, "[")
+          |> Map.put({xr, yr - 1}, "]")
+        else
+          map_box
+        end
+
+      {"]", "."} ->
+        map_box = move_box_d(map, {xl - 1, yl - 1}, {xr - 1, yl - 1}, "^")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl - 1}, "[")
+          |> Map.put({xr, yr - 1}, "]")
+        else
+          map_box
+        end
+
+      {"[", "]"} ->
+        map_box = move_box_d(map, {xl, yl - 1}, {xr, yr - 1}, "^")
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl - 1}, "[")
+          |> Map.put({xr, yr - 1}, "]")
+        else
+          map_box
+        end
+
+      {"]", "["} ->
+        m1 = move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
+        m2 = move_box_d(map, {xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
+
+        map_box =
+          if m1 != map and m2 != map do
+            move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
+            |> move_box_d({xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
+          else
+            map
+          end
+
+        if map_box != map do
+          map_box
+          |> Map.put({xl, yl}, ".")
+          |> Map.put({xr, yr}, ".")
+          |> Map.put({xl, yl - 1}, "[")
+          |> Map.put({xr, yr - 1}, "]")
+        else
+          map_box
+        end
+    end
+  end
+
+  defp double_map(map) do
+    map
+    |> Enum.reduce(%{}, fn {{x, y}, v}, acc ->
+      Map.put(acc, {x * 2, y}, v)
+    end)
+    |> Enum.reduce(%{}, fn {{x, y}, v}, acc ->
+      case v do
+        "#" ->
+          acc
+          |> Map.put({x, y}, v)
+          |> Map.put({x + 1, y}, v)
+
+        "O" ->
+          acc
+          |> Map.put({x, y}, "[")
+          |> Map.put({x + 1, y}, "]")
+
+        "." ->
+          acc
+          |> Map.put({x, y}, v)
+          |> Map.put({x + 1, y}, v)
+
+        "@" ->
+          acc
+          |> Map.put({x, y}, v)
+          |> Map.put({x + 1, y}, ".")
+      end
+    end)
   end
 
   defp print(map) do
-    for y <- 0..(8 - 1) do
+    {mx, my} =
+      Enum.reduce(map, {0, 0}, fn {{x, y}, _}, {mx, my} ->
+        new_x = if x > mx, do: x, else: mx
+        new_y = if y > my, do: y, else: my
+        {new_x, new_y}
+      end)
+
+    for y <- 0..my do
       line =
-        for x <- 0..(8 - 1) do
+        for x <- 0..mx do
           Map.get(map, {x, y})
         end
 

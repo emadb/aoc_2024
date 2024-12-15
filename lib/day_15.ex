@@ -285,11 +285,7 @@ defmodule Aoc.Day15 do
 
     case {dl, dr} do
       {".", "."} ->
-        map
-        |> Map.put({xl, yl}, ".")
-        |> Map.put({xr, yr}, ".")
-        |> Map.put({xl, yl - 1}, "[")
-        |> Map.put({xr, yr - 1}, "]")
+        update_map(map, {xl, yl}, {xr, yr}, "^")
 
       {"#", _} ->
         map
@@ -298,49 +294,22 @@ defmodule Aoc.Day15 do
         map
 
       {".", "["} ->
-        map_box = move_box_d(map, {xl + 1, yl - 1}, {xr + 1, yr - 1}, "^")
-
-        if map_box != map do
-          map_box
-          |> Map.put({xl, yl}, ".")
-          |> Map.put({xr, yr}, ".")
-          |> Map.put({xl, yl - 1}, "[")
-          |> Map.put({xr, yr - 1}, "]")
-        else
-          map_box
-        end
+        map = move_box_d(map, {xl + 1, yl - 1}, {xr + 1, yr - 1}, "^")
+        update_map(map, {xl, yl}, {xr, yr}, "^")
 
       {"]", "."} ->
-        map_box = move_box_d(map, {xl - 1, yl - 1}, {xr - 1, yl - 1}, "^")
-
-        if map_box != map do
-          map_box
-          |> Map.put({xl, yl}, ".")
-          |> Map.put({xr, yr}, ".")
-          |> Map.put({xl, yl - 1}, "[")
-          |> Map.put({xr, yr - 1}, "]")
-        else
-          map_box
-        end
+        map = move_box_d(map, {xl - 1, yl - 1}, {xr - 1, yl - 1}, "^")
+        update_map(map, {xl, yl}, {xr, yr}, "^")
 
       {"[", "]"} ->
-        map_box = move_box_d(map, {xl, yl - 1}, {xr, yr - 1}, "^")
-
-        if map_box != map do
-          map_box
-          |> Map.put({xl, yl}, ".")
-          |> Map.put({xr, yr}, ".")
-          |> Map.put({xl, yl - 1}, "[")
-          |> Map.put({xr, yr - 1}, "]")
-        else
-          map_box
-        end
+        map = move_box_d(map, {xl, yl - 1}, {xr, yr - 1}, "^")
+        update_map(map, {xl, yl}, {xr, yr}, "^")
 
       {"]", "["} ->
         m1 = move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
         m2 = move_box_d(map, {xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
 
-        map_box =
+        map =
           if m1 != map and m2 != map do
             move_box_d(map, {xl - 1, yr - 1}, {xr - 1, yl - 1}, "^")
             |> move_box_d({xl + 1, yr - 1}, {xr + 1, yr - 1}, "^")
@@ -348,16 +317,16 @@ defmodule Aoc.Day15 do
             map
           end
 
-        if map_box != map do
-          map_box
-          |> Map.put({xl, yl}, ".")
-          |> Map.put({xr, yr}, ".")
-          |> Map.put({xl, yl - 1}, "[")
-          |> Map.put({xr, yr - 1}, "]")
-        else
-          map_box
-        end
+        update_map(map, {xl, yl}, {xr, yr}, "^")
     end
+  end
+
+  defp update_map(map, {xl, yl}, {xr, yr}, "^") do
+    map
+    |> Map.put({xl, yl}, ".")
+    |> Map.put({xr, yr}, ".")
+    |> Map.put({xl, yl - 1}, "[")
+    |> Map.put({xr, yr - 1}, "]")
   end
 
   defp double_map(map) do

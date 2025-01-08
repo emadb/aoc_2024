@@ -11,19 +11,18 @@ defmodule Aoc.Day17 do
     search_a(program, expected, 0, 0)
   end
 
-
   defp search_a(_, target, a, depth) when depth == length(target), do: a
 
   defp search_a(program, target, a, depth) do
     Enum.find_value(0..7, fn i ->
       %{out: output} = execute(program, initial_state(a * 8 + i, 0, 0))
+
       if output != [] and hd(output) == Enum.at(target, depth) do
         result = search_a(program, target, a * 8 + i, depth + 1)
         if result != 0, do: result, else: nil
       end
     end)
   end
-
 
   defp xor(a, b), do: :erlang.bxor(a, b)
 

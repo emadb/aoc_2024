@@ -57,9 +57,7 @@ defmodule Aoc.Day17Test do
   @tag timeout: :infinity
   test "part two" do
     input = Path.absname(@real_input)
-    result = Aoc.Day17.part_two([2,4,1,3,7,5,4,1,1,3,0,3,5,5,3,0])
-    assert result = 9641146161661
+    result = Aoc.Day17.part_two([2, 4, 1, 3, 7, 5, 4, 1, 1, 3, 0, 3, 5, 5, 3, 0])
+    assert result = 9_641_146_161_661
   end
-
-
 end

@@ -4,7 +4,6 @@ defmodule Aoc.Day19 do
 
     run_async(combinations, towels)
     |> Enum.count(fn x -> x > 0 end)
-
   end
 
   defp run_async(combinations, towels) do
@@ -13,6 +12,7 @@ defmodule Aoc.Day19 do
   end
 
   defp check("", _), do: 1
+
   defp check(combination, towels) do
     with nil <- Process.get(combination) do
       towels
@@ -24,7 +24,7 @@ defmodule Aoc.Day19 do
         end
       end)
       |> tap(fn total -> Process.put(combination, total) end)
-   end
+    end
   end
 
   def part_two(input) do
@@ -32,13 +32,13 @@ defmodule Aoc.Day19 do
 
     run_async(combinations, towels)
     |> Enum.sum()
-
   end
 
   defp parse(input) do
-    [towels, combinations] = input
-    |> InputFile.get_file()
-    |> String.split("\n\n")
+    [towels, combinations] =
+      input
+      |> InputFile.get_file()
+      |> String.split("\n\n")
 
     towels = String.split(towels, ", ")
     combinations = String.split(combinations, "\n")
